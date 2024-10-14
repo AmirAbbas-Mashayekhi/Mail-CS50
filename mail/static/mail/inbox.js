@@ -74,8 +74,43 @@ function load_mailbox(mailbox) {
     .then((emails) => {
       emails.forEach((email) => {
         const emailUI = document.createElement("div");
-        emailUI.classList.add("card");
-        // --- TODO
+
+        // Border
+        emailUI.style.borderBottom = "1px solid #dee2e6";
+
+        // Text truncation
+        emailUI.style.overflow = "hidden";
+        emailUI.style.whiteSpace = "nowrap";
+        emailUI.style.textOverflow = "ellipsis";
+
+        // Flex
+        emailUI.style.display = "flex";
+        emailUI.style.justifyContent = "space-between";
+        emailUI.style.height = "40px";
+        emailUI.style.paddingTop = "10px";
+
+        // EmailUI Content -> Left side
+        if (mailbox === "sent") {
+          const emailUILeft = document.createElement("p");
+          emailUILeft.innerHTML = `To: <b>${email.recipients}</b>`;
+          emailUI.appendChild(emailUILeft);
+        } else {
+          const emailUILeft = document.createElement("p");
+          emailUILeft.innerHTML = `From: <b>${email.sender}</b>`;
+          emailUI.appendChild(emailUILeft);
+        }
+        // EmailUI Content -> Center
+        const emailUICenter = document.createElement("p");
+        emailUICenter.innerHTML = email.subject;
+        emailUI.appendChild(emailUICenter);
+
+        // EmailUI Content -> Right side
+        const emailUIRight = document.createElement("p");
+        emailUIRight.classList.add("small");
+        emailUIRight.style.opacity = "50%";
+        emailUIRight.innerHTML = email.timestamp;
+        emailUI.appendChild(emailUIRight);
+
         // Get the parent element for these email UI's
         const emailsView = document.querySelector("#emails-view");
         emailsView.appendChild(emailUI);
