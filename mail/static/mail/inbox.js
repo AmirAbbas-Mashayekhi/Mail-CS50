@@ -18,7 +18,11 @@ document.addEventListener("DOMContentLoaded", function () {
 function compose_email() {
   // Show compose view and hide other views
   document.querySelector("#emails-view").style.display = "none";
+  document.querySelector("#email-detail-view").style.display = "none";
   document.querySelector("#compose-view").style.display = "block";
+
+  // Clear out email-detail content
+  ClearOutEmailDetail();
 
   // Clear form fields
   clearComposeFields();
@@ -60,6 +64,10 @@ function load_mailbox(mailbox) {
   // Show the mailbox and hide other views
   document.querySelector("#emails-view").style.display = "block";
   document.querySelector("#compose-view").style.display = "none";
+  document.querySelector("#email-detail-view").style.display = "none";
+
+  // Clear out email-detail content
+  ClearOutEmailDetail();
 
   // Show the mailbox name
   document.querySelector("#emails-view").innerHTML = `<h3>${
@@ -75,6 +83,13 @@ function load_mailbox(mailbox) {
       emails.forEach((email) => {
         const emailUI = document.createElement("div");
 
+        // Miscellaneous
+        emailUI.classList.add("btn", "hover-effect");
+
+        // Check if email is read or not (for bg-color)
+        if (email.read && mailbox !== "sent") {
+          emailUI.classList.add("read-mail");
+        }
         // Border
         emailUI.style.borderBottom = "1px solid #dee2e6";
 
@@ -114,6 +129,9 @@ function load_mailbox(mailbox) {
         // Get the parent element for these email UI's
         const emailsView = document.querySelector("#emails-view");
         emailsView.appendChild(emailUI);
+
+        // Event handler for clicking on a mail
+        emailUI.addEventListener("click", () => showEmailDetail(email));
       });
     });
 }
@@ -144,5 +162,62 @@ function removeElementIfExists(selector) {
   const element = document.querySelector(selector);
   if (element) {
     element.remove();
+  }
+}
+
+function showEmailDetail(email) {
+  // Hide other components
+  document.querySelector("#emails-view").style.display = "none";
+  document.querySelector("#compose-view").style.display = "none";
+  document.querySelector("#email-detail-view").style.display = "block";
+  // Clear out email-detail content
+  ClearOutEmailDetail();
+
+  // Check email as read
+  fetch(`/emails/${email.id}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      read: true,
+    }),
+  });
+
+  // Make HTTP Request
+  fetch(`/emails/${email.id}`)
+    .then((response) => response.json())
+    .then((email) => {
+      // Create email detail UI in email-detail-view div
+      const emailDetailParent = document.querySelector("#email-detail-view");
+      const emailDetailUI = document.createElement("div");
+      emailDetailUI.id = "email-detail";
+
+      // Creating components for the email detail
+      const sender = document.createElement("p");
+      const recipients = document.createElement("p");
+      const subject = document.createElement("p");
+      const timestamp = document.createElement("p");
+      const body = document.createElement("p");
+
+      // Modifying the HTML content for the components
+      sender.innerHTML = `<b>From:</b> ${email.sender}`;
+      recipients.innerHTML = `<b>To:</b> ${email.recipients}`;
+      subject.innerHTML = `<b>Subject:</b> ${email.subject}`;
+      timestamp.innerHTML = `<b>Timestamp:</b> ${email.timestamp} <hr>`;
+      body.innerHTML = email.body;
+
+      // Adding children
+      emailDetailUI.appendChild(sender);
+      emailDetailUI.appendChild(recipients);
+      emailDetailUI.appendChild(subject);
+      emailDetailUI.appendChild(timestamp);
+
+      emailDetailParent.appendChild(emailDetailUI);
+      emailDetailParent.appendChild(body);
+    });
+}
+
+function ClearOutEmailDetail() {
+  const emailDetail = document.querySelector("#email-detail-view");
+  if (emailDetail) {
+    emailDetail.innerHTML = "";
   }
 }

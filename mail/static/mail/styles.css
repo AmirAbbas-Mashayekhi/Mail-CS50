@@ -1,3 +1,15 @@
 textarea {
-    min-height: 400px;
+  min-height: 400px;
+}
+
+.hover-effect {
+  transition: background-color 0.05s ease;
+}
+
+.hover-effect:hover {
+  background-color: #f0f0f0;
+}
+
+.read-mail {
+  background-color: rgb(235, 235, 235);
 }
