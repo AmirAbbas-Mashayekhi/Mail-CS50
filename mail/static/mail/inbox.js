@@ -15,6 +15,9 @@ document.addEventListener("DOMContentLoaded", function () {
   load_mailbox("inbox");
 });
 
+// Keep track of current mailbox as a global variable
+let currentMailbox;
+
 function compose_email() {
   // Show compose view and hide other views
   document.querySelector("#emails-view").style.display = "none";
@@ -61,6 +64,9 @@ function compose_email() {
 }
 
 function load_mailbox(mailbox) {
+  // Set the current mailbox
+  currentMailbox = mailbox;
+
   // Show the mailbox and hide other views
   document.querySelector("#emails-view").style.display = "block";
   document.querySelector("#compose-view").style.display = "none";
@@ -201,7 +207,7 @@ function showEmailDetail(email) {
       sender.innerHTML = `<b>From:</b> ${email.sender}`;
       recipients.innerHTML = `<b>To:</b> ${email.recipients}`;
       subject.innerHTML = `<b>Subject:</b> ${email.subject}`;
-      timestamp.innerHTML = `<b>Timestamp:</b> ${email.timestamp} <hr>`;
+      timestamp.innerHTML = `<b>Timestamp:</b> ${email.timestamp}`;
       body.innerHTML = email.body;
 
       // Adding children
@@ -210,7 +216,78 @@ function showEmailDetail(email) {
       emailDetailUI.appendChild(subject);
       emailDetailUI.appendChild(timestamp);
 
+      // Archive and reply buttons for Archived and inbox mailboxes
+      if (currentMailbox !== "sent") {
+        // Create Button wrapper
+        const btnWrapper = document.createElement("div");
+        btnWrapper.id = "reply-archive-wrapper";
+        btnWrapper.style.display = "flex";
+        btnWrapper.style.justifyContent = "start";
+        btnWrapper.style.gap = "3px";
+
+        // Archive / Unarchive button
+        const archiveBtn = document.createElement("button");
+        archiveBtn.classList.add("btn", "btn-dark", "btn-sm");
+
+        // Setting the text and the action for the button based on archived status
+        if (!email.archived) {
+          archiveBtn.innerHTML = "Archive";
+          archiveBtn.addEventListener("click", function () {
+            fetch(`/emails/${email.id}`, {
+              method: "PUT",
+              body: JSON.stringify({
+                archived: true,
+              }),
+            }).then(() => load_mailbox("inbox"));
+          });
+        } else {
+          archiveBtn.innerHTML = "Unarchive";
+          archiveBtn.addEventListener("click", function () {
+            fetch(`/emails/${email.id}`, {
+              method: "PUT",
+              body: JSON.stringify({
+                archived: false,
+              }),
+            }).then(() => load_mailbox("inbox"));
+          });
+        }
+
+        // Reply button
+        const replyBtn = document.createElement("button");
+        replyBtn.innerHTML = "Reply";
+        replyBtn.classList.add("btn", "btn-dark", "btn-sm");
+
+        // Add event handler for replying
+        replyBtn.addEventListener("click", () => {
+          const replyRecipient = email.sender;
+          let replySubject;
+          const replyBody = `on ${email.timestamp} ${email.sender} wrote: ${email.body}`;
+
+          // Prepend subject with "Re:" if not already prepended with "Re:"
+          if (!email.subject.startsWith("Re:")) {
+            replySubject = "Re: " + email.subject;
+          } else {
+            replySubject = email.subject;
+          }
+
+          // Load compose view
+          compose_email();
+
+          // Pre-fill the information
+          document.querySelector("#compose-recipients").value = replyRecipient;
+          document.querySelector("#compose-subject").value = replySubject;
+          document.querySelector("#compose-body").value = replyBody;
+        });
+
+        // Load the buttons
+        btnWrapper.appendChild(replyBtn);
+        btnWrapper.appendChild(archiveBtn);
+        emailDetailUI.appendChild(btnWrapper);
+      }
+
+      // Rendering Email body
       emailDetailParent.appendChild(emailDetailUI);
+      emailDetailParent.append(document.createElement("hr"));
       emailDetailParent.appendChild(body);
     });
 }
